@@ -1,0 +1,351 @@
+#include <stdio.h>
+#include <math.h>
+#include <assert.h>
+#include <limits.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define MAX_LINE_LENGTH 1000
+
+
+//Problema A
+
+
+//ler linha a linha
+
+
+char *str_dup(const char *s)
+{
+  char *result = (char *) malloc(strlen(s) + 1);
+  strcpy(result, s);
+  return result;
+}
+
+int str_readline(FILE *f, char *s)
+{
+  int result = EOF;
+  char *p = fgets(s, INT_MAX, f);
+  if (p != NULL)
+  {
+    result = (int) strlen(s);
+    if (result > 0 && s[result-1] == '\n')
+    s[--result] = '\0';
+  }
+ return result;
+}
+
+int strings_read(FILE *f, char **a)
+{
+  int result = 0;
+  char line[MAX_LINE_LENGTH];
+  while (str_readline(f, line) != EOF)
+    a[result++] = str_dup(line);
+  return result;
+} 
+
+//-----------------------------------
+
+//ordenar-----------------------
+
+int strings_copy(char **a, int n, char **b) 
+{ 
+    if (n < 0) 
+        n = 0; 
+    memmove(b, a, n * sizeof(char *));
+    return n; 
+}
+
+
+int strings_merge(char **a, int n, char **b, int m, char **c)
+{
+ int result = 0;
+ int i = 0;
+ int j = 0;
+  while (i < n && j < m)
+    if(strcmp(a[i], b[j]) <= 0)
+      c[result++] = a[i++];
+    else
+      c[result++] = b[j++];
+    result += strings_copy(a+i, n-i, c+result);
+    result += strings_copy(b+j, m-j, c+result);
+ return result;
+} 
+
+void strings_msort(char **a, int n)
+{
+ if (n > 1)
+ {
+  int m = n / 2;
+  strings_msort(a, m);
+  strings_msort(a+m, n-m);
+  char **b=(char **) malloc(100000*sizeof(char *));
+  strings_merge(a, m, a+m, n-m, b);
+  strings_copy(b, n, a);
+  free(b);
+ }
+}
+
+//--------------------------------
+
+//contar count while
+
+int strings_count_while(char **a, int n, char *x)
+{
+ int result = 0;
+ while (result < n && strcmp(a[result], x) == 0)
+ result++;
+ return result;
+}
+
+int strings_unique_plus(char **a, int n, char **b, int x) 
+{ 
+ int result = 0; 
+ int i = 0; 
+ while (i < n)
+ { 
+   int z = strings_count_while(a+i, n-i, a[i]); 
+   if (z >= x)
+    b[result++] = a[i];
+    i += z; 
+  } 
+ return result;
+}
+
+//escrever e mudar de linha
+
+void strings_write(FILE *f, char **s, int n, const char *separator)
+{
+ if (n > 0)
+ {
+ fprintf(f, "%s", s[0]);
+ for (int i = 1; i < n; i++) // i = 1
+ fprintf(f, "%s%s", separator, s[i]);
+ }
+} 
+
+void strings_writeln(FILE *f, char **s, int n, const char *separator)
+{
+  strings_write(f, s, n, separator);
+  fprintf(f, "\n");
+}
+
+void strings_println(char **s, int n, const char *separator)
+{
+  strings_writeln(stdout, s, n, separator);
+}
+//--------------------------------------------------------
+
+//Problema B
+
+typedef struct {
+  int x;
+  int y;
+} Point;     //dizemos que Point(um ponto) e um tipo struct(ou uma estrutura) onde x e y sao estruturas(ou membros da mesma)
+
+//--------------------------
+
+typedef int (*Point_cmp)(Point, Point);
+
+//construtor (devolve uma estrutura)/(necessário para contruir estruturas)
+
+Point point(int x, int y)
+{
+  Point result;
+  result.x = x;
+  result.y = y;
+  return result;
+}
+
+void points_exchange(Point *a, int x, int y)
+{
+Point m = a[x];
+a[x] = a[y];
+a[y] = m;
+}
+
+//ler arrays de pontos
+
+int points_read(FILE *f, Point *a)
+{
+  int result = 0;
+  int x, y;
+  while (scanf("%d%d", &x, &y) != EOF)
+    a[result++] = point(x, y);
+  return result;
+}
+
+//--------------------------
+
+//distancia entre 2 pontos
+
+//Euclidean distance
+
+double distance(Point p, Point q)
+{
+  return (p.x-q.x)*(p.x-q.x) + (p.y-q.y)*(p.y-q.y);
+}
+
+
+//--------------------------
+
+int all_distances(Point *a, int n, int k, double *b)
+{
+  int result = 0;
+  for (int i = 0; i < n; i++)
+  {
+    if (k != i)
+    b[result++] = distance(a[k], a[i]);
+  }
+  return result;
+}
+
+
+//---------------------------
+
+
+double doubles_min(const double *a, int n) //minimo
+{ 
+ double result = INT_MAX; 
+ for (int i = 0; i < n; i++) 
+ if (result > a[i] && a[i] > 0)
+ result = a[i]; 
+ return result; 
+}
+
+
+//----------------
+
+int doubles_count(const double *a, int n, int x) 
+{ 
+ int result = 0;
+ for (int i = 0; i < n; i++)
+ if (a[i] == x)
+ result++;
+ return result;
+}
+
+
+//----------------
+
+//comparar pontos por x (em caso de desempate comparar por y)
+
+int point_cmp_x_y(Point p, Point q)
+{
+  int result = p.x - q.x;
+  if (result == 0)
+    result = p.y - q.y;
+  return result;
+} 
+
+
+
+//-----------------------------------------
+
+int its_reliable(Point *a, int n, int k)
+{
+  double b[10000];
+  all_distances(a, n, k, b);
+  int min = doubles_min(b, n);
+  int z = doubles_count(b, n, min);
+  if (z <= 1)
+  {
+    return 1;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+
+int its_all_reliable(Point *a, int n, Point *c)
+{
+  int result = 0;
+  for(int i = 0; i < n; i++)
+    {
+    if(its_reliable(a, n, i) == 0)
+      c[result++] = a[i];
+    }
+  return result;
+}
+
+
+//-------------------------------
+void points_fprintf(FILE *f, Point *a, int n, const char *fmt)
+{
+  for (int i = 0; i < n; i++)
+    fprintf(f, fmt, a[i].x, a[i].y);
+}
+
+void points_fprintfln(FILE *f, Point *a, int n, const char *fmt)
+{
+  points_fprintf(f, a, n, fmt);
+  //fprintf(f, "\n");
+}
+
+
+//ordenar pontos/estruturas-----------------------
+
+void points_isort_by_x_y(Point *a, int n)
+{
+ for (int i = 1; i < n; i++)
+ {
+ int j = i;
+ while (j > 0 && point_cmp_x_y(a[j-1], a[j]) > 0)
+ {
+ points_exchange(a, j-1, j);
+ j--;
+ }
+ }
+}
+
+
+
+//---------------------------------------------------------------------------
+//void_test
+
+
+
+void test_problem_a(char* filename)
+{
+  int x;
+  char *b[MAX_LINE_LENGTH];
+  FILE *f = fopen(filename, "r");
+  assert(f != NULL);
+  char *garrafas[100000];
+  int n;
+  n = strings_read(f, garrafas);
+  strings_msort(garrafas, n);
+  scanf("%d\n", &x);
+  int z = strings_unique_plus(garrafas, n, b, x);
+  printf("%d\n", z);
+  if(z > 0)
+  {
+  strings_println(b, z, "\n");
+  }
+}
+
+
+void test_problem_b(char* filename)
+{
+  Point a[10000];
+  Point c[10000];
+  int n = points_read(stdin, a);
+  int l = its_all_reliable(a, n, c);
+  printf("%d\n", l);
+  points_isort_by_x_y(c, l);
+  points_fprintfln(stdout, c, l, "%d %d\n");
+}
+
+
+
+
+//-----------------------------------------------------------------------------------
+
+
+int main(int argc, char **argv)
+{
+  //test_problem_a(argv[1]);
+  test_problem_b(argv[1]);
+  return 0;
+}
